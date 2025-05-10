@@ -91,8 +91,44 @@ describe("hundred-wallet", () => {
     const printEvents = block[99].events.filter(
       (event) => event.event === "print_event"
     );
-    console.log("\nPrint Event Values:");
+    console.log("\nPrint Event Values from buy-up-to:");
     printEvents.forEach((event, index) => {
+      console.log(`Print Event ${index + 1}:`);
+      console.log("Topic:", event.data.topic);
+      console.log("Value:", event.data.value);
+    });
+
+    // Now test buying into the DEX contract with one of the wallets
+    const buyerPrivateKey = wallet.accounts[0].stxPrivateKey;
+    const buyerAddress = privateKeyToAddress(buyerPrivateKey);
+
+    // Buy into the DEX contract
+    const dexBuyBlock = simnet.mineBlock([
+      tx.callPublicFn(
+        "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-dex",
+        "buy",
+        [
+          principalCV(
+            "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory"
+          ),
+          uintCV(21630000),
+        ],
+        buyerAddress
+      ),
+    ]);
+
+    console.log("\nDEX Buy Result:", dexBuyBlock[0].result);
+
+    // Log all events from the DEX buy transaction
+    console.log("\nEvents from DEX buy transaction:");
+    console.log(dexBuyBlock[0].events);
+
+    // Log just the print events from the DEX buy transaction
+    const dexPrintEvents = dexBuyBlock[0].events.filter(
+      (event) => event.event === "print_event"
+    );
+    console.log("\nPrint Event Values from DEX buy:");
+    dexPrintEvents.forEach((event, index) => {
       console.log(`Print Event ${index + 1}:`);
       console.log("Topic:", event.data.topic);
       console.log("Value:", event.data.value);
