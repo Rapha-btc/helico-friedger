@@ -84,7 +84,18 @@ describe("hundred-wallet", () => {
 
     console.log(block.map((r) => r.result));
 
-    // Add logging for events from the last transaction
+    // Log events from the last transaction
     console.log("Events from last transaction:", block[99].events);
+
+    // Log the value inside print events
+    const printEvents = block[99].events.filter(
+      (event) => event.event === "print_event"
+    );
+    console.log("\nPrint Event Values:");
+    printEvents.forEach((event, index) => {
+      console.log(`Print Event ${index + 1}:`);
+      console.log("Topic:", event.data.topic);
+      console.log("Value:", event.data.value);
+    });
   });
 });
