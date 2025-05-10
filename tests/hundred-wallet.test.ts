@@ -83,5 +83,8 @@ describe("hundred-wallet", () => {
     );
 
     console.log(block.map((r) => r.result));
+
+    // Add logging for events from the last transaction
+    console.log("Events from last transaction:", block[99].events);
   });
 });
