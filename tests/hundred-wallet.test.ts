@@ -305,20 +305,6 @@ describe("hundred-wallet", () => {
       );
       console.log("Buyer SBTC balance before swap:", balanceBeforeSwap.result);
 
-      // Try to get a quote first
-      try {
-        console.log("Getting swap quote...");
-        const swapQuote = simnet.callReadOnlyFn(
-          "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-pool",
-          "get-swap-quote",
-          [uintCV(swapAmount), bufferCV(Buffer.from([0x00]))],
-          buyerAddress
-        );
-        console.log("Swap quote:", swapQuote.result);
-      } catch (error) {
-        console.log("Error getting swap quote (this is optional):", error);
-      }
-
       // Perform the swap through the pool
       console.log("\nExecuting swap-a-to-b through the pool...");
       const swapBlock = simnet.mineBlock([
