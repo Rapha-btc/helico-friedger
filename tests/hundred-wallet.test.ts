@@ -69,6 +69,7 @@ describe("hundred-wallet", () => {
       })
     );
 
+    console.log("Bitcoin deposit results:");
     console.log(block.map((r) => r.result));
 
     block = simnet.mineBlock(
@@ -82,6 +83,7 @@ describe("hundred-wallet", () => {
       })
     );
 
+    console.log("Pre-factory buy-up-to results:");
     console.log(block.map((r) => r.result));
 
     // Log events from the last transaction
@@ -110,86 +112,219 @@ describe("hundred-wallet", () => {
         wallet_1
       );
       console.log("Pre-faktory market open state:", marketOpenState.result);
+    } catch (error) {
+      console.error("Error checking pre-faktory contract state:", error);
+    }
 
-      // Check bonded state
-      const isBonded = simnet.callReadOnlyFn(
-        "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-pre-faktory",
-        "is-bonded",
+    // Step 1: Make sure we have a buyer with enough SBTC for DEX purchase
+    console.log("\n=== DEX PURCHASE TEST ===");
+
+    // Select a buyer from our wallet accounts
+    const buyerPrivateKey = wallet.accounts[0].stxPrivateKey;
+    const buyerAddress = privateKeyToAddress(buyerPrivateKey);
+    console.log("Buyer address:", buyerAddress);
+
+    // Check buyer's token balance
+    try {
+      const tokenBalance = simnet.callReadOnlyFn(
+        "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token",
+        "get-balance",
+        [principalCV(buyerAddress)],
+        buyerAddress
+      );
+      console.log("Buyer token balance:", tokenBalance.result);
+
+      // If needed, fund the buyer with more SBTC for the DEX purchase
+      const amount = 22000000; // Slightly more than the required 21630000
+
+      console.log(
+        "Topping up buyer's SBTC balance to ensure enough for purchase..."
+      );
+      const fundBlock = simnet.mineBlock([
+        tx.callPublicFn(
+          "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-deposit",
+          "complete-deposit-wrapper",
+          [
+            bufferCV(randomBytes(32)),
+            uintCV(1),
+            uintCV(amount), // Amount needed for DEX
+            principalCV(buyerAddress),
+            burnHash.value,
+            uintCV(blockHeight),
+            bufferCV(
+              hexToBytes(
+                "52500d11cabf1049ebb139a82b439d08bd3a8e867a41fb3f368dfa125e043989"
+              )
+            ),
+          ],
+          "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4"
+        ),
+      ]);
+      console.log("Top-up result:", fundBlock[0].result);
+
+      // Verify balance after top-up
+      const newBalance = simnet.callReadOnlyFn(
+        "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token",
+        "get-balance",
+        [principalCV(buyerAddress)],
+        buyerAddress
+      );
+      console.log("Buyer token balance after top-up:", newBalance.result);
+    } catch (error) {
+      console.error("Error managing buyer token balance:", error);
+    }
+
+    // Step 2: Try to open the DEX market
+    try {
+      console.log("\nTrying to open the DEX market...");
+      const dexOpenState = simnet.callReadOnlyFn(
+        "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-dex",
+        "get-open",
         [],
         wallet_1
       );
-      console.log("Pre-faktory bonded state:", isBonded.result);
+      console.log("DEX open state:", dexOpenState.result);
 
-      // Log contract state for debugging
-      console.log("\nVerifying DEX dependencies...");
+      // Try to open the market if not already open
+      if (
+        dexOpenState.result.value === false ||
+        (dexOpenState.result.value &&
+          dexOpenState.result.value.type === "false")
+      ) {
+        console.log("Opening DEX market...");
+        const openMarketBlock = simnet.mineBlock([
+          tx.callPublicFn(
+            "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-dex",
+            "open-market",
+            [],
+            wallet_1
+          ),
+        ]);
+        console.log("Open market result:", openMarketBlock[0].result);
 
-      // Check if faktory token contract exists
-      try {
-        const faktoryInfo = simnet.callReadOnlyFn(
-          "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory",
-          "get-name",
-          [],
-          wallet_1
-        );
-        console.log("Faktory token contract exists:", faktoryInfo.result);
-      } catch (error) {
-        console.error("Faktory token contract error:", error);
-      }
-
-      // Check if bonus faktory contract exists
-      try {
-        const bonusInfo = simnet.callReadOnlyFn(
-          "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-bonus-faktory",
-          "get-bonus-total",
-          [],
-          wallet_1
-        );
-        console.log("Bonus faktory contract exists:", bonusInfo.result);
-      } catch (error) {
-        console.error("Bonus faktory contract error:", error);
-      }
-
-      // Check if faktory pool contract exists
-      try {
-        const poolInfo = simnet.callReadOnlyFn(
-          "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-pool",
-          "get-details",
-          [],
-          wallet_1
-        );
-        console.log("Faktory pool contract exists:", poolInfo.result);
-      } catch (error) {
-        console.error("Faktory pool contract error:", error);
-      }
-
-      // Now check the traits
-      console.log("\nVerifying trait contracts...");
-      try {
-        const traitInfo = simnet.callReadOnlyFn(
-          "SP29CK9990DQGE9RGTT1VEQTTYH8KY4E3JE5XP4EC.faktory-dex-trait-v1-1",
-          "is-trait-defined",
-          [],
-          wallet_1
-        );
-        console.log("Trait contract exists:", traitInfo.result);
-      } catch (error) {
-        console.error("Trait contract error:", error);
-        console.log(
-          "This is likely causing the DEX contract issue - trait contracts may not be deployed in the test environment"
-        );
+        // Log events from open-market if any
+        if (openMarketBlock[0].events && openMarketBlock[0].events.length > 0) {
+          const openEvents = openMarketBlock[0].events.filter(
+            (e) => e.event === "print_event"
+          );
+          console.log("\nPrint events from open-market:");
+          openEvents.forEach((event, index) => {
+            console.log(`Print Event ${index + 1}:`, event.data.value);
+          });
+        }
       }
     } catch (error) {
-      console.error("Error checking contract state:", error);
+      console.error("Error opening DEX market:", error);
+    }
+
+    // Step 3: Buy from DEX
+    try {
+      console.log("\nBuying from DEX...");
+      const dexBuyBlock = simnet.mineBlock([
+        tx.callPublicFn(
+          "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-dex",
+          "buy",
+          [
+            principalCV(
+              "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory"
+            ),
+            uintCV(21630000),
+          ],
+          buyerAddress
+        ),
+      ]);
+
+      console.log("DEX Buy Result:", dexBuyBlock[0].result);
+
+      // Log events from DEX buy transaction
+      if (dexBuyBlock[0].events && dexBuyBlock[0].events.length > 0) {
+        console.log("\nEvents from DEX buy transaction:");
+
+        // Get all print events
+        const dexPrintEvents = dexBuyBlock[0].events.filter(
+          (e) => e.event === "print_event"
+        );
+        console.log(`Found ${dexPrintEvents.length} print events`);
+
+        dexPrintEvents.forEach((event, index) => {
+          console.log(`\nPrint Event ${index + 1}:`);
+          console.log("Topic:", event.data.topic);
+          console.log("Value:", event.data.value);
+        });
+
+        // Also log ft_transfer events to see token movement
+        const transferEvents = dexBuyBlock[0].events.filter(
+          (e) => e.event === "ft_transfer_event"
+        );
+        console.log(`\nFound ${transferEvents.length} token transfer events`);
+
+        transferEvents.forEach((event, index) => {
+          console.log(`\nTransfer Event ${index + 1}:`, event.data);
+        });
+      }
+    } catch (error) {
+      console.error("Error buying from DEX:", error);
+    }
+
+    // Step 4: Buy from the pool
+    try {
+      console.log("\n=== POOL PURCHASE TEST ===");
+
+      // Check if the pool exists and is initialized
+      console.log("Checking pool status...");
+      const poolInfo = simnet.callReadOnlyFn(
+        "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-pool",
+        "get-details",
+        [],
+        wallet_1
+      );
+      console.log("Pool details:", poolInfo.result);
+
+      // Now buy from the pool
+      console.log("\nBuying from pool...");
+      const poolBuyBlock = simnet.mineBlock([
+        tx.callPublicFn(
+          "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-pool",
+          "buy",
+          [uintCV(5000000)], // Amount to buy (adjust as needed)
+          buyerAddress
+        ),
+      ]);
+
+      console.log("Pool Buy Result:", poolBuyBlock[0].result);
+
+      // Log events from pool buy transaction
+      if (poolBuyBlock[0].events && poolBuyBlock[0].events.length > 0) {
+        console.log("\nEvents from pool buy transaction:");
+
+        // Get all print events
+        const poolPrintEvents = poolBuyBlock[0].events.filter(
+          (e) => e.event === "print_event"
+        );
+        console.log(`Found ${poolPrintEvents.length} print events`);
+
+        poolPrintEvents.forEach((event, index) => {
+          console.log(`\nPrint Event ${index + 1}:`);
+          console.log("Topic:", event.data.topic);
+          console.log("Value:", event.data.value);
+        });
+
+        // Also log ft_transfer events to see token movement
+        const transferEvents = poolBuyBlock[0].events.filter(
+          (e) => e.event === "ft_transfer_event"
+        );
+        console.log(`\nFound ${transferEvents.length} token transfer events`);
+
+        transferEvents.forEach((event, index) => {
+          console.log(`\nTransfer Event ${index + 1}:`, event.data);
+        });
+      }
+    } catch (error) {
+      console.error("Error buying from pool:", error);
     }
 
     console.log(
-      "\nTest completed successfully. The pre-faktory contract works correctly."
-    );
-    console.log(
-      "To fix the DEX contract issue, ensure all dependent contracts are properly deployed in the Clarinet project."
-    );
-    console.log(
-      "In particular, check if the trait contracts and other required contracts are present in the Clarinet.toml file."
+      "\nTest completed. Transactions on pre-faktory, DEX, and pool have been executed and logged."
     );
   });
 });
