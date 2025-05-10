@@ -6,8 +6,15 @@ telemetry = true
 cache_dir = "./.cache"
 
 requirements = [
- {contract_id = "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-pre-faktory"},
- {contract_id = "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-deposit"}
+  {contract_id = "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-pre-faktory"}, 
+  {contract_id = "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-deposit"},
+  {contract_id = "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-dex"},
+  {contract_id = "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory"},
+  {contract_id = "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-bonus-faktory"},
+  {contract_id = "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-pool"},
+  {contract_id = "SP29CK9990DQGE9RGTT1VEQTTYH8KY4E3JE5XP4EC.aibtcdev-dao-traits-v1-1"},
+  {contract_id = "SP29CK9990DQGE9RGTT1VEQTTYH8KY4E3JE5XP4EC.faktory-dex-trait-v1-1"},
+  {contract_id = "SP3XXMS38VTAWTVPE5682XSBFXPTH7XCPEBTX8AN2.faktory-trait-v1"}
 ]
 # [contracts.counter]
 # path = "contracts/counter.clar"

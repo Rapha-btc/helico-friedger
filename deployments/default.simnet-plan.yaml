@@ -60,6 +60,19 @@ plan:
     - id: 0
       transactions:
         - emulated-contract-publish:
+            contract-name: nft-trait
+            emulated-sender: SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9
+            path: "./.cache/requirements/SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.nft-trait.clar"
+            clarity-version: 1
+        - emulated-contract-publish:
+            contract-name: sip-010-trait-ft-standard
+            emulated-sender: SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE
+            path: "./.cache/requirements/SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.clar"
+            clarity-version: 1
+      epoch: "2.1"
+    - id: 1
+      transactions:
+        - emulated-contract-publish:
             contract-name: sbtc-registry
             emulated-sender: SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4
             path: "./.cache/requirements/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-registry.clar"
@@ -74,8 +87,18 @@ plan:
             emulated-sender: SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4
             path: "./.cache/requirements/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-deposit.clar"
             clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: charisma-traits-v1
+            emulated-sender: SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS
+            path: "./.cache/requirements/SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.charisma-traits-v1.clar"
+            clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: dexterity-traits-v0
+            emulated-sender: SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS
+            path: "./.cache/requirements/SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.dexterity-traits-v0.clar"
+            clarity-version: 3
       epoch: "3.0"
-    - id: 1
+    - id: 2
       transactions:
         - emulated-contract-publish:
             contract-name: faktory-trait-v1
@@ -83,8 +106,43 @@ plan:
             path: "./.cache/requirements/SP3XXMS38VTAWTVPE5682XSBFXPTH7XCPEBTX8AN2.faktory-trait-v1.clar"
             clarity-version: 3
         - emulated-contract-publish:
+            contract-name: bouncr-bonus-faktory
+            emulated-sender: SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22
+            path: "./.cache/requirements/SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-bonus-faktory.clar"
+            clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: aibtcdev-dao-traits-v1
+            emulated-sender: SP29CK9990DQGE9RGTT1VEQTTYH8KY4E3JE5XP4EC
+            path: "./.cache/requirements/SP29CK9990DQGE9RGTT1VEQTTYH8KY4E3JE5XP4EC.aibtcdev-dao-traits-v1.clar"
+            clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: bouncr-faktory
+            emulated-sender: SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22
+            path: "./.cache/requirements/SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory.clar"
+            clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: bouncr-faktory-pool
+            emulated-sender: SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22
+            path: "./.cache/requirements/SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-pool.clar"
+            clarity-version: 3
+        - emulated-contract-publish:
             contract-name: bouncr-pre-faktory
             emulated-sender: SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22
             path: "./.cache/requirements/SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-pre-faktory.clar"
+            clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: aibtcdev-dao-traits-v1-1
+            emulated-sender: SP29CK9990DQGE9RGTT1VEQTTYH8KY4E3JE5XP4EC
+            path: "./.cache/requirements/SP29CK9990DQGE9RGTT1VEQTTYH8KY4E3JE5XP4EC.aibtcdev-dao-traits-v1-1.clar"
+            clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: faktory-dex-trait-v1-1
+            emulated-sender: SP29CK9990DQGE9RGTT1VEQTTYH8KY4E3JE5XP4EC
+            path: "./.cache/requirements/SP29CK9990DQGE9RGTT1VEQTTYH8KY4E3JE5XP4EC.faktory-dex-trait-v1-1.clar"
+            clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: bouncr-faktory-dex
+            emulated-sender: SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22
+            path: "./.cache/requirements/SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-dex.clar"
             clarity-version: 3
       epoch: "3.1"
