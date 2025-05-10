@@ -266,51 +266,90 @@ describe("hundred-wallet", () => {
       console.error("Error buying from DEX:", error);
     }
 
-    // Step 4: Buy from the pool
+    // Step 4: Swap tokens through the pool using swap-a-to-b
     try {
-      console.log("\n=== POOL PURCHASE TEST ===");
+      console.log("\n=== POOL SWAP TEST ===");
 
-      // Check if the pool exists and is initialized
-      console.log("Checking pool status...");
-      const poolInfo = simnet.callReadOnlyFn(
-        "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-pool",
-        "get-details",
-        [],
-        wallet_1
+      // Make sure the buyer has enough SBTC for the swap
+      console.log("Topping up buyer's SBTC balance for pool swap...");
+      const swapAmount = 1000000; // 1M satoshis as requested
+
+      const fundForSwapBlock = simnet.mineBlock([
+        tx.callPublicFn(
+          "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-deposit",
+          "complete-deposit-wrapper",
+          [
+            bufferCV(randomBytes(32)),
+            uintCV(1),
+            uintCV(swapAmount + 100000), // Add a buffer
+            principalCV(buyerAddress),
+            burnHash.value,
+            uintCV(blockHeight),
+            bufferCV(
+              hexToBytes(
+                "52500d11cabf1049ebb139a82b439d08bd3a8e867a41fb3f368dfa125e043989"
+              )
+            ),
+          ],
+          "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4"
+        ),
+      ]);
+      console.log("Top-up for swap result:", fundForSwapBlock[0].result);
+
+      // Check buyer's token balance before swap
+      const balanceBeforeSwap = simnet.callReadOnlyFn(
+        "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token",
+        "get-balance",
+        [principalCV(buyerAddress)],
+        buyerAddress
       );
-      console.log("Pool details:", poolInfo.result);
+      console.log("Buyer SBTC balance before swap:", balanceBeforeSwap.result);
 
-      // Now buy from the pool
-      console.log("\nBuying from pool...");
-      const poolBuyBlock = simnet.mineBlock([
+      // Try to get a quote first
+      try {
+        console.log("Getting swap quote...");
+        const swapQuote = simnet.callReadOnlyFn(
+          "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-pool",
+          "get-swap-quote",
+          [uintCV(swapAmount), bufferCV(Buffer.from([0x00]))],
+          buyerAddress
+        );
+        console.log("Swap quote:", swapQuote.result);
+      } catch (error) {
+        console.log("Error getting swap quote (this is optional):", error);
+      }
+
+      // Perform the swap through the pool
+      console.log("\nExecuting swap-a-to-b through the pool...");
+      const swapBlock = simnet.mineBlock([
         tx.callPublicFn(
           "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory-pool",
-          "buy",
-          [uintCV(5000000)], // Amount to buy (adjust as needed)
+          "swap-a-to-b",
+          [uintCV(swapAmount)],
           buyerAddress
         ),
       ]);
 
-      console.log("Pool Buy Result:", poolBuyBlock[0].result);
+      console.log("Swap Result:", swapBlock[0].result);
 
-      // Log events from pool buy transaction
-      if (poolBuyBlock[0].events && poolBuyBlock[0].events.length > 0) {
-        console.log("\nEvents from pool buy transaction:");
+      // Log events from the swap transaction
+      if (swapBlock[0].events && swapBlock[0].events.length > 0) {
+        console.log("\nEvents from pool swap transaction:");
 
         // Get all print events
-        const poolPrintEvents = poolBuyBlock[0].events.filter(
+        const swapPrintEvents = swapBlock[0].events.filter(
           (e) => e.event === "print_event"
         );
-        console.log(`Found ${poolPrintEvents.length} print events`);
+        console.log(`Found ${swapPrintEvents.length} print events`);
 
-        poolPrintEvents.forEach((event, index) => {
+        swapPrintEvents.forEach((event, index) => {
           console.log(`\nPrint Event ${index + 1}:`);
           console.log("Topic:", event.data.topic);
           console.log("Value:", event.data.value);
         });
 
         // Also log ft_transfer events to see token movement
-        const transferEvents = poolBuyBlock[0].events.filter(
+        const transferEvents = swapBlock[0].events.filter(
           (e) => e.event === "ft_transfer_event"
         );
         console.log(`\nFound ${transferEvents.length} token transfer events`);
@@ -319,12 +358,35 @@ describe("hundred-wallet", () => {
           console.log(`\nTransfer Event ${index + 1}:`, event.data);
         });
       }
+
+      // Check buyer's token balances after swap
+      const sbtcBalanceAfterSwap = simnet.callReadOnlyFn(
+        "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token",
+        "get-balance",
+        [principalCV(buyerAddress)],
+        buyerAddress
+      );
+      console.log(
+        "Buyer SBTC balance after swap:",
+        sbtcBalanceAfterSwap.result
+      );
+
+      const bouncBalanceAfterSwap = simnet.callReadOnlyFn(
+        "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-faktory",
+        "get-balance",
+        [principalCV(buyerAddress)],
+        buyerAddress
+      );
+      console.log(
+        "Buyer BOUNCR balance after swap:",
+        bouncBalanceAfterSwap.result
+      );
     } catch (error) {
-      console.error("Error buying from pool:", error);
+      console.error("Error with pool swap:", error);
     }
 
     console.log(
-      "\nTest completed. Transactions on pre-faktory, DEX, and pool have been executed and logged."
+      "\nTest completed. All transactions have been executed and logged."
     );
   });
 });
