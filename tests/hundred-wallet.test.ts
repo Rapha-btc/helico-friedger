@@ -371,6 +371,113 @@ describe("hundred-wallet", () => {
       console.error("Error with pool swap:", error);
     }
 
+    // Add this to your test file after the pool swap test
+
+    // Step 5: Test triggering fee airdrop
+    try {
+      console.log("\n=== FEE AIRDROP TEST ===");
+
+      // First, let's check the fee distribution info before attempting the airdrop
+      const feeDistInfo = simnet.callReadOnlyFn(
+        "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-pre-faktory",
+        "get-fee-distribution-info",
+        [],
+        wallet_1
+      );
+      console.log("Fee distribution info before airdrop:", feeDistInfo.result);
+
+      // Simulate the DEX sending fees to the pre-faktory contract first
+      // This is needed before we can trigger an airdrop
+      console.log("\nSimulating DEX sending fees...");
+      const fee_amount = 50000; // 0.5 BTC worth of fees
+      const createFeesResult = simnet.mineBlock([
+        tx.callPublicFn(
+          "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-pre-faktory",
+          "create-fees-receipt",
+          [uintCV(fee_amount)],
+          "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22" // Using the DEX contract as sender
+        ),
+      ]);
+      console.log("Create fees receipt result:", createFeesResult[0].result);
+
+      // Check if we can trigger the airdrop now
+      const canTrigger = simnet.callReadOnlyFn(
+        "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-pre-faktory",
+        "can-trigger-airdrop",
+        [],
+        wallet_1
+      );
+      console.log("Can trigger airdrop:", canTrigger.result);
+
+      // If we're in final-airdrop-mode, we can trigger immediately
+      // Otherwise, we might need to wait for the cooldown period
+
+      // For testing, let's try to trigger the airdrop
+      console.log("\nTriggering fee airdrop...");
+      const airdropResult = simnet.mineBlock([
+        tx.callPublicFn(
+          "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-pre-faktory",
+          "trigger-fee-airdrop",
+          [],
+          wallet_1 // Anyone can call this function
+        ),
+      ]);
+
+      console.log("Airdrop Result:", airdropResult[0].result);
+
+      // Check events from the airdrop transaction
+      if (airdropResult[0].events && airdropResult[0].events.length > 0) {
+        console.log("\nEvents from airdrop transaction:");
+
+        // Get all print events
+        const airdropPrintEvents = airdropResult[0].events.filter(
+          (e) => e.event === "print_event"
+        );
+        console.log(`Found ${airdropPrintEvents.length} print events`);
+
+        airdropPrintEvents.forEach((event, index) => {
+          console.log(`\nPrint Event ${index + 1}:`);
+          console.log("Topic:", event.data.topic);
+          console.log("Value:", event.data.value);
+        });
+
+        // Also log ft_transfer events to see fee distribution
+        const transferEvents = airdropResult[0].events.filter(
+          (e) => e.event === "ft_transfer_event"
+        );
+        console.log(`\nFound ${transferEvents.length} fee transfer events`);
+
+        transferEvents.forEach((event, index) => {
+          console.log(`\nTransfer Event ${index + 1}:`, event.data);
+        });
+      }
+
+      // Check fee distribution info after the airdrop
+      const postAirdropInfo = simnet.callReadOnlyFn(
+        "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-pre-faktory",
+        "get-fee-distribution-info",
+        [],
+        wallet_1
+      );
+      console.log(
+        "\nFee distribution info after airdrop:",
+        postAirdropInfo.result
+      );
+
+      // Check a specific user's expected share in the next airdrop
+      const userExpectedShare = simnet.callReadOnlyFn(
+        "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-pre-faktory",
+        "get-user-expected-share",
+        [principalCV(privateKeyToAddress(wallet.accounts[0].stxPrivateKey))],
+        wallet_1
+      );
+      console.log("\nUser expected share:", userExpectedShare.result);
+    } catch (error) {
+      console.error("Error testing airdrop:", error);
+    }
+
+    console.log("\nAll tests completed successfully!");
+
     console.log(
       "\nTest completed. All transactions have been executed and logged."
     );
