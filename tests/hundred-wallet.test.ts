@@ -373,6 +373,38 @@ describe("hundred-wallet", () => {
 
     // Add this to your test file after the pool swap test
 
+    // Helper function to extract value from Clarity response
+    function extractClarityValue(clarityObj) {
+      if (
+        clarityObj.type === "ok" &&
+        clarityObj.value &&
+        clarityObj.value.type === "tuple"
+      ) {
+        const result = {};
+        for (const [key, value] of Object.entries(clarityObj.value.value)) {
+          if (value.type === "uint") {
+            result[key] = Number(value.value);
+          } else if (value.type === "bool") {
+            result[key] = value.value;
+          } else if (value.type === "principal") {
+            result[key] = value.value;
+          } else if (
+            value.type === "some" &&
+            value.value &&
+            value.value.type === "uint"
+          ) {
+            result[key] = Number(value.value.value);
+          } else if (value.type === "none") {
+            result[key] = null;
+          } else {
+            result[key] = value.value;
+          }
+        }
+        return result;
+      }
+      return clarityObj;
+    }
+
     // Step 5: Test triggering fee airdrop
     try {
       console.log("\n=== FEE AIRDROP TEST ===");
@@ -384,7 +416,10 @@ describe("hundred-wallet", () => {
         [],
         wallet_1
       );
-      console.log("Fee distribution info before airdrop:", feeDistInfo.result);
+      console.log(
+        "Fee distribution info before airdrop:",
+        extractClarityValue(feeDistInfo.result)
+      );
 
       // Simulate the DEX sending fees to the pre-faktory contract first
       // This is needed before we can trigger an airdrop
@@ -441,15 +476,48 @@ describe("hundred-wallet", () => {
           console.log("Value:", event.data.value);
         });
 
-        // Also log ft_transfer events to see fee distribution
+        // Count and summarize transfer events
         const transferEvents = airdropResult[0].events.filter(
           (e) => e.event === "ft_transfer_event"
         );
         console.log(`\nFound ${transferEvents.length} fee transfer events`);
 
-        transferEvents.forEach((event, index) => {
-          console.log(`\nTransfer Event ${index + 1}:`, event.data);
+        // Log summary of transfers
+        const transferSummary = {};
+        let totalDistributed = 0;
+
+        transferEvents.forEach((event) => {
+          const amount = parseInt(event.data.amount);
+          const recipient = event.data.recipient;
+          transferSummary[recipient] =
+            (transferSummary[recipient] || 0) + amount;
+          totalDistributed += amount;
         });
+
+        console.log("\nTransfer Summary:");
+        console.log("Total distributed:", totalDistributed);
+        console.log("Unique recipients:", Object.keys(transferSummary).length);
+
+        // Show a few sample transfers
+        console.log("\nFirst 5 transfers:");
+        transferEvents.slice(0, 5).forEach((event, index) => {
+          console.log(
+            `Transfer ${index + 1}: ${event.data.amount} to ${
+              event.data.recipient
+            }`
+          );
+        });
+
+        // Show any residual transfer
+        const residualTransfer = transferEvents.find(
+          (e) => e.data.recipient === "SMH8FRN30ERW1SX26NJTJCKTDR3H27NRJ6W75WQE"
+        );
+        if (residualTransfer) {
+          console.log(
+            "\nResidual transfer to FAKTORY1:",
+            residualTransfer.data.amount
+          );
+        }
       }
 
       // Check fee distribution info after the airdrop
@@ -461,7 +529,7 @@ describe("hundred-wallet", () => {
       );
       console.log(
         "\nFee distribution info after airdrop:",
-        postAirdropInfo.result
+        extractClarityValue(postAirdropInfo.result)
       );
 
       // Check a specific user's expected share in the next airdrop
@@ -471,7 +539,40 @@ describe("hundred-wallet", () => {
         [principalCV(privateKeyToAddress(wallet.accounts[0].stxPrivateKey))],
         wallet_1
       );
-      console.log("\nUser expected share:", userExpectedShare.result);
+      console.log(
+        "\nUser expected share:",
+        extractClarityValue(userExpectedShare.result)
+      );
+
+      // Get all seat holders and show the summary
+      const allSeatHolders = simnet.callReadOnlyFn(
+        "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.bouncr-pre-faktory",
+        "get-all-seat-holders",
+        [],
+        wallet_1
+      );
+
+      if (
+        allSeatHolders.result &&
+        allSeatHolders.result.value &&
+        allSeatHolders.result.value.value
+      ) {
+        const seatHolders = allSeatHolders.result.value.value.value || [];
+        console.log("\nSeat holders summary:");
+        console.log("Total seat holders:", seatHolders.length);
+        let totalSeatCount = 0;
+        seatHolders.forEach((holder) => {
+          if (holder.type === "tuple" && holder.value) {
+            const seats = parseInt(holder.value.seats.value);
+            totalSeatCount += seats;
+          }
+        });
+        console.log("Total seats:", totalSeatCount);
+        console.log(
+          "Average seats per holder:",
+          totalSeatCount / seatHolders.length
+        );
+      }
     } catch (error) {
       console.error("Error testing airdrop:", error);
     }
