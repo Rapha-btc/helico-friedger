@@ -1,8 +1,8 @@
 import { initSimnet, tx } from "@hirosystems/clarinet-sdk";
+import { hexToBytes } from "@stacks/common";
 import {
   BufferCV,
   bufferCV,
-  bufferCVFromString,
   principalCV,
   privateKeyToAddress,
   randomBytes,
@@ -11,10 +11,7 @@ import {
 } from "@stacks/transactions";
 import { generateNewAccount, generateWallet } from "@stacks/wallet-sdk";
 import { describe, it } from "vitest";
-import { hexToBytes } from "@stacks/common";
-import { C } from "vitest/dist/chunks/reporters.d.DG9VKi4m.js";
 
-const simnet = await initSimnet();
 const accounts = simnet.getAccounts();
 
 const testMnemonic =
